@@ -292,7 +292,7 @@ WindowProc(HWND hwnd,
 			L"BUTTON", L"Delete",
 			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
 			230, 150, 80, 30,
-			hwnd, (HMENU)1003,
+			hwnd, (HMENU)1004,
 			(HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
 			NULL);
 
