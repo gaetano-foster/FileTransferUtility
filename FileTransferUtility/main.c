@@ -47,8 +47,8 @@ WinMain(HINSTANCE hInstance,
 		WS_OVERLAPPEDWINDOW,    // Window style
 		CW_USEDEFAULT,          // Position X
 		CW_USEDEFAULT,          // Position Y
-		800,                    // Width
-		600,                    // Height
+		500,                    // Width
+		400,                    // Height
 		NULL,                   // Parent window
 		NULL,                   // Menu
 		hInstance,              // Instance handle
@@ -184,22 +184,22 @@ ProcessListFile(const wchar_t *fromDir,
 {
 	FILE *lists = _wfopen(L"FileUtilsLists.txt", L"r, ccs=UTF-8");
 	if (!lists) {
-		MessageBox(NULL, L"Could not open lists.txt", L"Error", MB_ICONERROR);
+		MessageBox(NULL, L"Could not open FileUtilsLists.txt", L"Error", MB_ICONERROR);
 		  return FALSE;
 	}
 
 	FILE *logs = _wfopen(L"FileUtilsLogs.txt", L"a, ccs=UTF-8");
 	if (!logs) {
-		MessageBox(NULL, L"Could not open logs.txt", L"Error", MB_ICONERROR);
+		MessageBox(NULL, L"Could not open FileUtilsLogs.txt", L"Error", MB_ICONERROR);
 		fclose(lists);
 		return FALSE;
 	}
 
-	const wchar_t *filenames[256];
+	const wchar_t *filenames[1000];
 	int count = 0;
 
-	static wchar_t lineBufs[256][512]; // avoid malloc, use static buffers
-	while (count < 256 && fgetws(lineBufs[count], 512, lists)) {
+	static wchar_t lineBufs[1000][512]; // avoid malloc, use static buffers
+	while (count < 1000 && fgetws(lineBufs[count], 512, lists)) {
 		wchar_t *newline = wcspbrk(lineBufs[count], L"\r\n");
 		if (newline) *newline = 0;
 		if (wcslen(lineBufs[count]) > 0) {
