@@ -340,17 +340,64 @@ ProcessListFile(const wchar_t *fromDir,
 		return FALSE;
 	}
 
-	const wchar_t *filenames[1000];
+	int max = 1000;
 	int count = 0;
+	wchar_t **filenames;
+	wchar_t *lineBufs;
+	if (!(filenames = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, max * sizeof(wchar_t*)))) {
+		MessageBox(NULL, L"Out of memory", L"Error", MB_ICONERROR);
+		fclose(logs);
+		fclose(lists);
+		return FALSE;
+	}
+	if (!(lineBufs = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, max * MAX_PATH * sizeof(wchar_t)))) {
+		MessageBox(NULL, L"Out of memory", L"Error", MB_ICONERROR);
+		fclose(logs);
+		fclose(lists);
+		HeapFree(GetProcessHeap(), 0, filenames);
+		return FALSE;
+	}
+	
+	while (fgetws(lineBufs + count * MAX_PATH, MAX_PATH, lists) != NULL) {
+		if (count == max - 1) {
+			max *= 2;
+			wchar_t **newFilenames = HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, filenames, max * sizeof(wchar_t*));
+			wchar_t *newLineBufs = HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, lineBufs, max * MAX_PATH * sizeof(wchar_t));
 
-	static wchar_t lineBufs[1000][512]; // static buffers
-	while (count < 1000 && fgetws(lineBufs[count], 512, lists)) {
-		wchar_t *newline = wcspbrk(lineBufs[count], L"\r\n");
+			if (newFilenames == NULL) {
+				MessageBox(NULL, L"Out of memory", L"Error", MB_ICONERROR);
+				fclose(logs);
+				fclose(lists);
+				HeapFree(GetProcessHeap(), 0, filenames);
+				return FALSE;
+			}
+			if (newLineBufs == NULL) {
+				MessageBox(NULL, L"Out of memory", L"Error", MB_ICONERROR);
+				fclose(logs);
+				fclose(lists);
+				HeapFree(GetProcessHeap(), 0, filenames);
+				HeapFree(GetProcessHeap(), 0, lineBufs);
+				return FALSE;
+			}
+			filenames = newFilenames;
+			lineBufs = newLineBufs;
+		}
+
+		wchar_t *newline = wcspbrk(lineBufs + count * MAX_PATH, L"\r\n");
 		if (newline) *newline = 0;
-		if (wcslen(lineBufs[count]) > 0) {
-			filenames[count] = lineBufs[count];
+		if (wcslen(lineBufs + count * MAX_PATH) > 0) {
+			filenames[count] = lineBufs + count * MAX_PATH;
 			count++;
 		}
+	}
+
+	if (ferror(lists)) {
+		MessageBox(NULL, L"Error reading FileUtilsLists.txt", L"Error", MB_ICONERROR);
+		fclose(logs);
+		fclose(lists);
+		HeapFree(GetProcessHeap(), 0, filenames);
+		HeapFree(GetProcessHeap(), 0, lineBufs);
+		return FALSE;
 	}
 
 	SearchContext ctx = {
@@ -368,6 +415,8 @@ ProcessListFile(const wchar_t *fromDir,
 
 	fclose(lists);
 	fclose(logs);
+	HeapFree(GetProcessHeap(), 0, filenames);
+	HeapFree(GetProcessHeap(), 0, lineBufs);
 	return TRUE;
 }
 
@@ -391,7 +440,6 @@ FileProcessingThread(LPVOID lpParam)
 		else if (params->action == ACTION_DELETE) {
 			MessageBox(params->hwndMain, L"Deleted Files!", L"", MB_OK);
 		}
-
 	}
 	
 	HeapFree(GetProcessHeap(), 0, params); // clean up memory
